@@ -40,7 +40,7 @@ encode: function [rows :block] [
 ]
 
 decode: function [data :string] [
-    if [and? (size data) > 0 (last data) <> "\xFD"] ->
+    if? and? (size data) > 0 (last data) <> '\xFD' ->
         throw "incomplete RSV document"
     result: []
     currow: []
