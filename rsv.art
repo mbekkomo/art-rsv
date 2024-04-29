@@ -1,0 +1,56 @@
+;; 
+;; art-rsv
+;; 
+;; Copyright (c) 2024 Komo
+;; 
+;; Permission is hereby granted, free of charge, to any person obtaining a copy
+;; of this software and associated documentation files (the "Software"), to deal
+;; in the Software without restriction, including without limitation the rights
+;; to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+;; copies of the Software, and to permit persons to whom the Software is
+;; furnished to do so, subject to the following conditions:
+;; 
+;; The above copyright notice and this permission notice shall be included in all
+;; copies or substantial portions of the Software.
+;; 
+;; THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+;; IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+;; FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+;; AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+;; LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+;; SOFTWARE.
+;; 
+
+_VERSION: 0.1.0
+
+encode: function [rows :block] [
+    buffer: []
+    loop rows 'row [
+        ensure [block? row]
+        loop row 'v [
+            ensure [string? v or? null? v]
+            if? null? v -> 'buffer ++ "\xFE"
+            else -> 'buffer ++ v
+            'buffer ++ "\xFF"
+        ]
+        'buffer ++ "\xFD"
+    ]
+    join buffer
+]
+
+decode: function [data :string] [
+    unless [(size data) > 0 and? data\[dec size data] <> "\xFD"] ->
+        throw "incomplete RSV document"
+    result: []
+    currow: []
+    loop split.by: "\xFD" data 'row [
+        loop split.by: "\xFF" row 'v [
+            if? v = "\xFE" -> 'currow ++ null
+            else -> 'currow ++ v
+        ]
+        'result ++ @[slice currow 0 ((size currow)-2)]
+        empty 'currow
+    ]
+    remove.index result (dec size result)
+]
