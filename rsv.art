@@ -29,7 +29,7 @@ encode: function [rows :block] [
     loop rows 'row [
         ensure [block? row]
         loop row 'v [
-            ensure [string? v or? null? v]
+            ensure [or? string? v null? v]
             if? null? v -> 'buffer ++ "\xFE"
             else -> 'buffer ++ v
             'buffer ++ "\xFF"
@@ -40,7 +40,7 @@ encode: function [rows :block] [
 ]
 
 decode: function [data :string] [
-    unless [(size data) > 0 and? data\[dec size data] <> "\xFD"] ->
+    if [and? (size data) > 0 (last data) <> "\xFD"] ->
         throw "incomplete RSV document"
     result: []
     currow: []
